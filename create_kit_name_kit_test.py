@@ -1,25 +1,86 @@
 import data
 import sender_stand_request
 
-
 def get_kit_body (kit_name):
     current_body = data.kit_body.copy()
     current_body["name"] = kit_name
     return current_body
 
-def get_new_user_token():
-    response = sender_stand_request.post_new_client_kit(data.user_body)
-    return response.json()["authToken"]
+def get_authorized_header():
+    user_account = sender_stand_request.post_new_user()
+    assert user_account.status_code == 201
+    token = user_account.json() ["authToken"]
+    header = data.header_kit.copy()
+    header ["Authorization"] =  f'Bearer {token}'
+    return header
 
-def positive_assert(kit_body):
-    response = sender_stand_request.post_new_client_kit(kit_body,get_new_user_token())
-    assert response.status_code == 201
-    assert response.json()["name"] == kit_body["name"]
+def positive_assert(name):
+    user_body = get_kit_body(name)
+    current_header = get_authorized_header()
+    user_account= sender_stand_request.post_new_user()
+    assert user_account == 201
+    kit_response= sender_stand_request.post_new_kit(current_header, user_body)
 
-def negative_assert_code_400(kit_body):
-    response = sender_stand_request.post_new_client_kit(kit_body,get_new_user_token())
-    assert response.status_code == 400
+    assert kit_response.status_code == 201
+    assert kit_response.json() ["name"] == name
+    assert None == kit_response.json()["productsList"]
+    assert kit_response.json()["id"] != ""
+    assert kit_response.json()["productsCount"] == 0
+
+
+def negative_assert(name):
+    user_body = get_kit_body(name)
+    current_header = get_authorized_header()
+    user_account = sender_stand_request.post_new_user()
+    assert user_account.status_code == 201
+    kit_response = sender_stand_request.post_new_kit(current_header, user_body)
+
+    assert kit_response.status_code == 400
+    assert kit_response.json()["code"] == 400
+    assert kit_response.json()["message"] != ""
 
 def test_crear_1_kit_con_nombre_de_6_letras():
     new_kit_body = get_kit_body("Krfewa")
     positive_assert(new_kit_body)
+def test_1_one_character():
+    positive_assert("a")
+def test_2_511_characters():
+    positive_assert("AbcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdAbcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabC")
+def test_3_none_character():
+    negative_assert("")
+def test_4_512_characters():
+    negative_assert("AbcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdAbcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcD")
+def test_5_special_characters():
+    positive_assert('"№%@",')
+def test_6_has_spaces():
+    positive_assert( " A Aaa ")
+def test_7_has_numbers():
+    positive_assert("123")
+def test_8_no_params():
+    kit_body = data.kit_body.copy()
+    current_header = get_authorized_header()
+    # El parámetro "Name" se elimina de la solicitud
+    kit_body.pop("name")
+    user_account = sender_stand_request.post_new_user()
+    assert user_account.status_code == 201
+    kit_response = sender_stand_request.post_new_kit(current_header, kit_body)
+    # Comprueba si el código de estado es 400
+    assert kit_response.status_code == 400
+    # Comprueba si devuelve el json un codigo de error 400 y que haya el mensaje correspondiente como lo indica el api
+    assert kit_response.json()["code"] == 400
+    assert kit_response.json()["message"] == "No se han aprobado todos los parámetros requeridos"
+def test_9_invalid_type_integer():
+    # El cuerpo actualizado de la solicitud se guarda en la variable user_body
+    kit_body = get_kit_body(123)
+    current_header = get_authorized_header()
+    # El resultado de la solicitud para crear un nuevo usuario o usuaria se guarda en la variable response
+    user_account = sender_stand_request.post_new_user()
+    # se creo exitosamente el usuario
+    assert user_account.status_code == 201
+    # enviamos una solicitud post con el header y body solicitados en la prueba
+    kit_response = sender_stand_request.post_new_kit(current_header, kit_body)
+    # Comprueba si el código de estado es 400
+    assert kit_response.status_code == 400
+    # Comprueba si devuelve el json un codigo de error 400 y que haya el mensaje correspondiente como lo indica el api
+    assert kit_response.json()["code"] == 400
+    assert kit_response.json()["message"] == "No se han aprobado todos los parámetros requeridos"
