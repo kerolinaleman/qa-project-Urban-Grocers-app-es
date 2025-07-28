@@ -59,28 +59,19 @@ def test_7_has_numbers():
 def test_8_no_params():
     kit_body = data.kit_body.copy()
     current_header = get_authorized_header()
-    # El parámetro "Name" se elimina de la solicitud
     kit_body.pop("name")
     user_account = sender_stand_request.post_new_user()
     assert user_account.status_code == 201
     kit_response = sender_stand_request.post_new_kit(current_header, kit_body)
-    # Comprueba si el código de estado es 400
     assert kit_response.status_code == 400
-    # Comprueba si devuelve el json un codigo de error 400 y que haya el mensaje correspondiente como lo indica el api
     assert kit_response.json()["code"] == 400
     assert kit_response.json()["message"] == "No se han aprobado todos los parámetros requeridos"
 def test_9_invalid_type_integer():
-    # El cuerpo actualizado de la solicitud se guarda en la variable user_body
     kit_body = get_kit_body(123)
     current_header = get_authorized_header()
-    # El resultado de la solicitud para crear un nuevo usuario o usuaria se guarda en la variable response
     user_account = sender_stand_request.post_new_user()
-    # se creo exitosamente el usuario
     assert user_account.status_code == 201
-    # enviamos una solicitud post con el header y body solicitados en la prueba
     kit_response = sender_stand_request.post_new_kit(current_header, kit_body)
-    # Comprueba si el código de estado es 400
     assert kit_response.status_code == 400
-    # Comprueba si devuelve el json un codigo de error 400 y que haya el mensaje correspondiente como lo indica el api
     assert kit_response.json()["code"] == 400
     assert kit_response.json()["message"] == "No se han aprobado todos los parámetros requeridos"
