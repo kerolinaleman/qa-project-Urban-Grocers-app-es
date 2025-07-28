@@ -1,5 +1,10 @@
-headers = {
+header_user = {
     "Content-Type": "application/json"
+}
+
+header_kit = {
+    "Content-Type": "application/json",
+    "Authorization": ""
 }
 
 user_body = {
