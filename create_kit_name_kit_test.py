@@ -74,4 +74,4 @@ def test_9_invalid_type_integer():
     kit_response = sender_stand_request.post_new_kit(current_header, kit_body)
     assert kit_response.status_code == 400
     assert kit_response.json()["code"] == 400
-    assert kit_response.json()["message"] == "No se han aprobado todos los parámetros requeridos"
+    assert kit_response.json()["message"] == "No se han aprobado todos los parámetros requeridos"#
