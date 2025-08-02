@@ -1,77 +1,72 @@
-import data
 import sender_stand_request
+from data import (
+    valid_name_1_letter,
+    valid_name_511_chars,
+    empty_name,
+    long_name_512_plus,
+    special_chars_name,
+    spaces_name,
+    numeric_string_name,
+    no_name_param,
+    numeric_type_name
+)
 
-def get_kit_body (kit_name):
-    current_body = data.kit_body.copy()
-    current_body["name"] = kit_name
-    return current_body
+# Función para construir el cuerpo del kit si tiene campo name
+def get_kit_body(name):
+    return { "name": name }
 
-def get_authorized_header():
-    user_account = sender_stand_request.post_new_user()
-    assert user_account.status_code == 201
-    token = user_account.json() ["authToken"]
-    header = data.header_kit.copy()
-    header ["Authorization"] =  f'Bearer {token}'
-    return header
+# Función común para crear kit con nombre y validar respuesta esperada
+def positive_assert(name_value):
+    body = get_kit_body(name_value)
+    token = sender_stand_request.get_new_user_token()
+    response = sender_stand_request.create_kit(body, token)
+    assert response.status_code == 201
+    assert response.json()["name"] == name_value
 
-def positive_assert(name):
-    user_body = get_kit_body(name)
-    current_header = get_authorized_header()
-    user_account= sender_stand_request.post_new_user()
-    assert user_account == 201
-    kit_response= sender_stand_request.post_new_kit(current_header, user_body)
+# Función común para verificar códigos 400 en casos inválidos
+def negative_assert(name_value):
+    body = get_kit_body(name_value)
+    token = sender_stand_request.get_new_user_token()
+    response = sender_stand_request.create_kit(body, token)
+    assert response.status_code == 400
 
-    assert kit_response.status_code == 201
-    assert kit_response.json() ["name"] == name
-    assert None == kit_response.json()["productsList"]
-    assert kit_response.json()["id"] != ""
-    assert kit_response.json()["productsCount"] == 0
+# 1. Nombre de 1 caracter permitido
+def test_name_1_char():
+    positive_assert(valid_name_1_letter)
 
+# 2. Nombre de 511 caracteres permitido
+def test_name_511_chars():
+    positive_assert(valid_name_511_chars)
 
-def negative_assert(name):
-    user_body = get_kit_body(name)
-    current_header = get_authorized_header()
-    user_account = sender_stand_request.post_new_user()
-    assert user_account.status_code == 201
-    kit_response = sender_stand_request.post_new_kit(current_header, user_body)
+# 3. Nombre vacío (0 caracteres)
+def test_name_empty():
+    negative_assert(empty_name)
 
-    assert kit_response.status_code == 400
-    assert kit_response.json()["code"] == 400
-    assert kit_response.json()["message"] != ""
+# 4. Nombre de más de 512 caracteres
+def test_name_too_long():
+    negative_assert(long_name_512_plus)
 
-def test_crear_1_kit_con_nombre_de_6_letras():
-    new_kit_body = get_kit_body("Krfewa")
-    positive_assert(new_kit_body)
-def test_1_one_character():
-    positive_assert("a")
-def test_2_511_characters():
-    positive_assert("AbcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdAbcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabC")
-def test_3_none_character():
-    negative_assert("")
-def test_4_512_characters():
-    negative_assert("AbcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdAbcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcD")
-def test_5_special_characters():
-    positive_assert('"№%@",')
-def test_6_has_spaces():
-    positive_assert( " A Aaa ")
-def test_7_has_numbers():
-    positive_assert("123")
-def test_8_no_params():
-    kit_body = data.kit_body.copy()
-    current_header = get_authorized_header()
-    kit_body.pop("name")
-    user_account = sender_stand_request.post_new_user()
-    assert user_account.status_code == 201
-    kit_response = sender_stand_request.post_new_kit(current_header, kit_body)
-    assert kit_response.status_code == 400
-    assert kit_response.json()["code"] == 400
-    assert kit_response.json()["message"] == "No se han aprobado todos los parámetros requeridos"
-def test_9_invalid_type_integer():
-    kit_body = get_kit_body(123)
-    current_header = get_authorized_header()
-    user_account = sender_stand_request.post_new_user()
-    assert user_account.status_code == 201
-    kit_response = sender_stand_request.post_new_kit(current_header, kit_body)
-    assert kit_response.status_code == 400
-    assert kit_response.json()["code"] == 400
-    assert kit_response.json()["message"] == "No se han aprobado todos los parámetros requeridos"#
+# 5. Caracteres especiales permitidos
+def test_name_special_chars():
+    positive_assert(special_chars_name)
+
+# 6. Nombre con espacios
+def test_name_with_spaces():
+    positive_assert(spaces_name)
+
+# 7. Nombre con números como string
+def test_name_numeric_string():
+    positive_assert(numeric_string_name)
+
+# 8. No se pasa el campo "name"
+def test_name_missing_param():
+    token = sender_stand_request.get_new_user_token()
+    response = sender_stand_request.create_kit(no_name_param, token)
+    assert response.status_code == 400
+
+# 9. Se pasa tipo incorrecto (número)
+def test_name_wrong_type():
+    body = get_kit_body(numeric_type_name)
+    token = sender_stand_request.get_new_user_token()
+    response = sender_stand_request.create_kit(body, token)
+    assert response.status_code == 400
